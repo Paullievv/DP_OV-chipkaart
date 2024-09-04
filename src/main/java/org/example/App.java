@@ -1,5 +1,6 @@
 package org.example;
 
+import javax.xml.transform.Result;
 import java.sql.*;
 
 public class App
@@ -9,16 +10,13 @@ public class App
     private static final String PASSWORD = "postgres";
 
     public static void main(String[] args) {
-        Connection connection = null;
-        Statement statement = null;
-        ResultSet resultSet = null;
 
         try {
-            connection = DriverManager.getConnection(URL, USER, PASSWORD);
-            statement = connection.createStatement();
+            Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+            Statement statement = connection.createStatement();
             String selectTravellers = "SELECT voorletters, tussenvoegsel, achternaam, geboortedatum FROM reiziger";
 
-            resultSet = statement.executeQuery(selectTravellers);
+            ResultSet resultSet = statement.executeQuery(selectTravellers);
 
             System.out.println("Alle reizigers:");
 
