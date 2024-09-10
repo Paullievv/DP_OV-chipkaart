@@ -24,7 +24,6 @@ public class DatabaseConfig {
             Class.forName(properties.getProperty("db.driver"));
         } catch (ClassNotFoundException e) {
             System.err.println("JDBC Driver class not found: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 

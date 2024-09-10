@@ -6,7 +6,7 @@ import java.sql.*;
 
 public class App
 {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
 
         try {
             Connection connection = connect();
@@ -40,6 +40,8 @@ public class App
             }
         } catch (SQLException e) {
             System.err.println("SQL Exception: " + e.getMessage());
+        } finally {
+            connect().close();
         }
     }
 
