@@ -1,8 +1,12 @@
 package org.example;
 
 import org.example.ovchip.database.DB;
+import org.example.ovchip.reiziger.Reiziger;
+import org.example.ovchip.reiziger.ReizigerDAO;
+import org.example.ovchip.reiziger.ReizigerDAOPsql;
 
 import java.sql.*;
+import java.util.List;
 
 public class App
 {
@@ -10,6 +14,13 @@ public class App
 
         try {
             Connection connection = connect();
+
+            testReizigerDAO(new ReizigerDAOPsql(connection));
+
+            Reiziger reiziger = new Reiziger(69, "P", "", "Vos", Date.valueOf("2003-06-11"));
+            ReizigerDAO reizigerDAO = new ReizigerDAOPsql(connection);
+            reizigerDAO.save(reiziger);
+
             Statement statement = connection.createStatement();
             String selectTravellers = "SELECT voorletters, tussenvoegsel, achternaam, geboortedatum FROM reiziger";
 
@@ -43,6 +54,28 @@ public class App
         } finally {
             connect().close();
         }
+    }
+
+    private static void testReizigerDAO(ReizigerDAO rdao) {
+        System.out.println("\n---------- Test ReizigerDAO -------------");
+
+        // Haal alle reizigers op uit de database
+        List<Reiziger> reizigers = rdao.findAll();
+        System.out.println("[Test] ReizigerDAO.findAll() geeft de volgende reizigers:");
+        for (Reiziger r : reizigers) {
+            System.out.println(r);
+        }
+        System.out.println();
+
+        // Maak een nieuwe reiziger aan en persisteer deze in de database
+        String gbdatum = "1981-03-14";
+        Reiziger sietske = new Reiziger(77, "S", "", "Boers", java.sql.Date.valueOf(gbdatum));
+        System.out.print("[Test] Eerst " + reizigers.size() + " reizigers, na ReizigerDAO.save() ");
+        rdao.save(sietske);
+        reizigers = rdao.findAll();
+        System.out.println(reizigers.size() + " reizigers\n");
+
+        // Voeg aanvullende tests van de ontbrekende CRUD-operaties in.
     }
 
     public static Connection connect(){

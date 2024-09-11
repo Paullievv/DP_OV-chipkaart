@@ -3,13 +3,16 @@ package org.example;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.example.ovchip.reiziger.ReizigerDAO;
+import org.example.ovchip.reiziger.Reiziger;
+
+import java.sql.SQLException;
+import java.util.List;
 
 /**
  * Unit test for simple App.
  */
-public class AppTest 
-    extends TestCase
-{
+public class AppTest extends TestCase {
     /**
      * Create the test case
      *
