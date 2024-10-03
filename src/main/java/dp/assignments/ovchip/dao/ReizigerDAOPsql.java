@@ -1,4 +1,7 @@
-package dp.assignments.ovchip.reiziger;
+package dp.assignments.ovchip.dao;
+
+import dp.assignments.ovchip.domain.Reiziger;
+import dp.assignments.ovchip.interfaces.ReizigerDAO;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -40,7 +43,7 @@ public class ReizigerDAOPsql implements ReizigerDAO {
     }
 
     @Override
-    public boolean update(Reiziger reiziger) {
+    public boolean update(Reiziger reiziger) throws SQLException {
         String sql = "UPDATE reiziger SET voorletters = ?, tussenvoegsel = ?, achternaam = ?, geboortedatum = ? WHERE reiziger_id = ?";
 
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -60,20 +63,42 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
             return affectedRows > 0;
 
-        } catch (SQLException e) {
-            e.getMessage();
-            return false;
         }
     }
 
 
     @Override
-    public boolean delete(Reiziger reiziger) {
-        return false;
+    public boolean delete(Reiziger reiziger) throws SQLException {
+        String sql = "DELETE FROM reiziger WHERE reiziger_id=?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, reiziger.getId());
+
+            int rowsDeleted = pstmt.executeUpdate();
+
+            return rowsDeleted>0;
+        }
     }
 
     @Override
-    public Reiziger findById(int id) {
+    public Reiziger findById(int id) throws SQLException {
+        String sql = "SELECT * FROM reiziger WHERE reiziger_id=?";
+
+        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, id);
+            ResultSet resultSet = pstmt.executeQuery();
+
+            if (resultSet.next()) {
+                return new Reiziger(
+                        resultSet.getInt(1),
+                        resultSet.getString(2),
+                        resultSet.getString(3),
+                        resultSet.getString(4),
+                        resultSet.getDate(5)
+                );
+            }
+        }
         return null;
     }
 
@@ -83,22 +108,18 @@ public class ReizigerDAOPsql implements ReizigerDAO {
     }
 
     @Override
-    public List<Reiziger> findAll() {
+    public List<Reiziger> findAll() throws SQLException {
         List<Reiziger> reizigers = new ArrayList<>();
 
-        try {
-            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM reiziger");
-            ResultSet result = stmt.executeQuery();
+        PreparedStatement stmt = conn.prepareStatement("SELECT * FROM reiziger");
+        ResultSet result = stmt.executeQuery();
 
-            while(result.next()) {
-                reizigers.add(new Reiziger(result.getInt(1),
-                        result.getString(2),
-                        result.getString(3),
-                        result.getString(4),
-                        result.getDate(5)));
-            }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
+        while(result.next()) {
+            reizigers.add(new Reiziger(result.getInt(1),
+                    result.getString(2),
+                    result.getString(3),
+                    result.getString(4),
+                    result.getDate(5)));
         }
 
         return reizigers;

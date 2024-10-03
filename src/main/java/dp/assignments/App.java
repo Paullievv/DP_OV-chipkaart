@@ -1,12 +1,9 @@
 package dp.assignments;
 
-import dp.assignments.ovchip.database.HibernateUtil;
-import dp.assignments.ovchip.reiziger.ReizigerDAOHibernate;
+import dp.assignments.ovchip.dao.AdresDAOPsql;
+import dp.assignments.ovchip.domain.Adres;
 import dp.assignments.ovchip.database.DB;
-import dp.assignments.ovchip.reiziger.Reiziger;
-import dp.assignments.ovchip.reiziger.ReizigerDAO;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
+import dp.assignments.ovchip.domain.Reiziger;
 
 import java.sql.*;
 import java.util.List;
@@ -14,34 +11,7 @@ import java.util.List;
 public class App
 {
     public static void main(String[] args) throws SQLException {
-
-        // Save reiziger with the Hibernate session given as parameter
-        saveReiziger(openSession());
-
-        // Uncomment below to test ReizigerDAOHibernate
-//      testReizigerDAO(new ReizigerDAOHibernate(openSession()));
-
-        // Shutdown Hibernate when program is done
-        HibernateUtil.shutdown();
-    }
-
-    public static void saveReiziger(Session session) {
-        ReizigerDAOHibernate dao = new ReizigerDAOHibernate(session);
-
-        Reiziger Pijltje = new Reiziger(99, "D", "", "Pijl", java.sql.Date.valueOf("2003-06-11"));
-        dao.delete(Pijltje);
-        dao.save(Pijltje);
-
-        // Closing session after all operations, new session will be given as parameter to the method
-        if (session != null && session.isOpen()) {
-            session.close();
-        }
-    }
-
-    // Connection with Hibernate
-    public static Session openSession() throws SQLException {
-        SessionFactory sessionFactory = HibernateUtil.getSessionFactory();
-        return sessionFactory.openSession();
+        testAdresDAO(new AdresDAOPsql(connect()));
     }
 
     // Connection with JDBC
@@ -49,61 +19,69 @@ public class App
         return DB.connect();
     }
 
-    private static void testReizigerDAO(ReizigerDAOHibernate rdao) {
-        System.out.println("\n---------- Test ReizigerDAO -------------");
+    private static void testAdresDAO(AdresDAOPsql adao) throws SQLException {
+        System.out.println("\n---------- Test AdresDAO -------------");
 
-        // Haal alle reizigers op uit de database
-        List<Reiziger> reizigers = rdao.findAll();
-        System.out.println("[Test] ReizigerDAO.findAll() geeft de volgende reizigers:");
-        for (Reiziger r : reizigers) {
-            System.out.println(r);
+        // Haal alle adressen op uit de database
+        List<Adres> adressen = adao.findAll();
+        System.out.println("[Test] AdresDAO.findAll() geeft de volgende adressen:");
+        for (Adres a : adressen) {
+            System.out.println(a);
         }
         System.out.println();
 
-        // Maak een nieuwe reiziger aan en persisteer deze in de database
-        String gbdatum = "1981-03-14";
-        Reiziger sietske = new Reiziger(77, "S", "", "Boers", java.sql.Date.valueOf(gbdatum));
-        System.out.print("[Test] Eerst " + reizigers.size() + " reizigers, na ReizigerDAO.save() ");
-        rdao.save(sietske);
-        reizigers = rdao.findAll();
-        System.out.println(reizigers.size() + " reizigers\n");
+        Reiziger reiziger = new Reiziger(99, "D", "", "Pijl", java.sql.Date.valueOf("2003-06-11"));
+        Adres existingAdres = adao.findByReiziger(reiziger);
 
-        // Update een bestaande reiziger en persisteer deze in de database
-        System.out.println("[Test] Update de geboortedatum van Reiziger met ID 77");
-        sietske.setGeboortedatum(java.sql.Date.valueOf("1985-05-25"));
-        rdao.update(sietske);
-        Reiziger updatedReiziger = rdao.findById(77);
-        System.out.println("Geboortedatum na update: " + updatedReiziger.getGeboortedatum());
-        System.out.println();
+        Adres nieuwAdres = new Adres(100, "1234AB", "12", "Laanstraat", "Utrecht", reiziger);
 
-        // Delete een bestaande reiziger
-        System.out.println("[Test] Verwijder reiziger met ID 77");
-        rdao.delete(sietske);
-        reizigers = rdao.findAll();
-        System.out.println("Aantal reizigers na ReizigerDAO.delete(): " + reizigers.size() + "\n");
-
-        // Vind reiziger aan de hand van ID
-        System.out.println("[Test] Vind reiziger met ID 1");
-        Reiziger reizigerById = rdao.findById(1);
-        if (reizigerById != null) {
-            System.out.println("Reiziger gevonden: " + reizigerById);
+        if (existingAdres != null) {
+            // Update the existing address
+            System.out.println("[Test] Update bestaand adres voor Reiziger met ID 99");
+            existingAdres.setPostcode("1234AB");
+            existingAdres.setHuisnummer("12");
+            existingAdres.setStraat("Laanstraat");
+            existingAdres.setWoonplaats("Utrecht");
+            adao.update(existingAdres);
         } else {
-            System.out.println("Geen reiziger gevonden met ID 1");
+            // No existing address found, create a new one
+            System.out.println("[Test] Voeg nieuw adres toe voor Reiziger met ID 99");
+            adao.save(nieuwAdres);  // Perform the save
+        }
+
+        // Update een bestaand adres en persisteer deze in de database
+        System.out.println("[Test] Update postcode van Adres met ID 99");
+        nieuwAdres.setPostcode("4321XY");
+        adao.update(nieuwAdres);
+        Adres updatedAdres = adao.findById(99);
+        System.out.println("Postcode na update: " + updatedAdres.getPostcode());
+        System.out.println();
+
+        // Delete een bestaand adres
+        System.out.println("[Test] Verwijder adres met ID 100");
+        adao.delete(nieuwAdres);
+        adressen = adao.findAll();
+        System.out.println("Aantal adressen na AdresDAO.delete(): " + adressen.size() + "\n");
+
+        // Vind adres aan de hand van ID
+        System.out.println("[Test] Vind adres met ID 1");
+        Adres adresById = adao.findById(1);
+        if (adresById != null) {
+            System.out.println("Adres gevonden: " + adresById);
+        } else {
+            System.out.println("Geen adres gevonden met ID 1");
         }
         System.out.println();
 
-        // Vind reiziger aan de hand van geboortedatum
-        System.out.println("[Test] Vind reizigers met geboortedatum '2003-06-11'");
-        List<Reiziger> reizigersByDate = rdao.findByGbdatum(java.sql.Date.valueOf("2003-06-11"));
-        if (reizigersByDate.isEmpty()) {
-            System.out.println("Geen reizigers gevonden met geboortedatum '2003-06-11'");
+        System.out.println("[Test] Vind adres van reiziger met reiziger");
+        Adres adresByReiziger = adao.findByReiziger(reiziger);
+        if (adresByReiziger != null) {
+            System.out.println("Adres van reiziger gevonden: " + adresByReiziger);
         } else {
-            System.out.println("Gevonden reizigers:");
-            for (Reiziger r : reizigersByDate) {
-                System.out.println(r);
-            }
+            System.out.println("Geen adres gevonden voor reiziger met reiziger");
         }
 
-        System.out.println("\n---------- Einde test ReizigerDAO -------------");
+        System.out.println("\n---------- Einde test AdresDAO -------------");
     }
+
 }

@@ -1,21 +1,15 @@
-package dp.assignments.ovchip.reiziger;
+package dp.assignments.ovchip.domain;
 
 import javax.persistence.*;
 import java.sql.Date;
 
-@Entity
-@Table(name = "reiziger")
 public class Reiziger {
-
-    @Id
-    @Column(name = "reiziger_id")
     private int id;
     private String voorletters;
     private String tussenvoegsel;
     private String achternaam;
     private Date geboortedatum;
-
-    public Reiziger() {}
+    private Adres adres;
 
     public Reiziger(int id, String voorletters, String tussenvoegsel, String achternaam, Date geboortedatum) {
         this.id = id;
@@ -23,6 +17,15 @@ public class Reiziger {
         this.tussenvoegsel = tussenvoegsel;
         this.achternaam = achternaam;
         this.geboortedatum = geboortedatum;
+    }
+
+    public Reiziger(int id, String voorletters, String tussenvoegsel, String achternaam, Date geboortedatum, Adres adres) {
+        this.id = id;
+        this.voorletters = voorletters;
+        this.tussenvoegsel = tussenvoegsel;
+        this.achternaam = achternaam;
+        this.geboortedatum = geboortedatum;
+        this.adres = adres;
     }
 
     public int getId() {
@@ -74,5 +77,13 @@ public class Reiziger {
         return "Reiziger: " + '(' + id +
                 ", " + voorletters + " " + tussenvoegsel + " " + achternaam +
                 ", " + geboortedatum + ')';
+    }
+
+    public Adres getAdres() {
+        return adres;
+    }
+
+    public void setAdres(Adres adres) {
+        this.adres = adres;
     }
 }
