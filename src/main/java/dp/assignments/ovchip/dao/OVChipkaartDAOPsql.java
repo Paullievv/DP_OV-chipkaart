@@ -157,7 +157,6 @@ public class OVChipkaartDAOPsql implements OVChipkaartDAO {
                 ovChipkaart.setSaldo(rs.getBigDecimal("saldo"));
                 ovChipkaart.setReiziger(reiziger);
 
-                // Retrieve and set the products for this OVChipkaart
                 ovChipkaart.setProducten(findProductsByOVChipkaart(ovChipkaart));
 
                 ovChipkaarten.add(ovChipkaart);
@@ -185,10 +184,9 @@ public class OVChipkaartDAOPsql implements OVChipkaartDAO {
                 Reiziger reiziger = rdao.findById(reizigerId);
                 ovChipkaart.setReiziger(reiziger);
 
-                // Retrieve and set the products for this OVChipkaart
                 List<Product> producten = findProductsByOVChipkaart(ovChipkaart.getKaartNummer());
                 for (Product product : producten) {
-                    ovChipkaart.addProduct(product); // Use the method to ensure bidirectional relationship
+                    ovChipkaart.addProduct(product);
                 }
 
                 ovChipkaarten.add(ovChipkaart);

@@ -165,9 +165,8 @@ public class App
     private static void testProductDAO(ProductDAOPsql pdao, OVChipkaartDAOPsql odao) throws SQLException {
         System.out.println("\n---------- Test ProductDAO -------------");
 
-        // Create a new Reiziger and save it
         Reiziger reiziger = new Reiziger(69, "P", "", "Vos", java.sql.Date.valueOf("2003-06-11"));
-        odao.rdao.save(reiziger); // Assume rdao is accessible from odao
+        odao.rdao.save(reiziger);
 
         // Create and save a new OVChipkaart
         OVChipkaart ovChipkaart = new OVChipkaart(83892481, Date.valueOf("2029-11-02"), 2, new BigDecimal(0), reiziger);
@@ -183,7 +182,7 @@ public class App
 
         // Create a new Product and associate it with the OVChipkaart
         Product newProduct = new Product(88, "Tegoed", "Tegoed voor reizen", new BigDecimal("50.00"));
-        newProduct.addOVChipkaart(ovChipkaart); // Associate with the OVChipkaart
+        newProduct.addOVChipkaart(ovChipkaart);
         System.out.println("[Test] Voeg nieuwe Product toe en associeer met OV-chipkaart.");
         pdao.save(newProduct);
 
@@ -225,13 +224,11 @@ public class App
         System.out.println("Aantal Producten na ProductDAO.delete(): " + products.size());
         System.out.println();
 
-        // Clean up: delete OVChipkaart and Reiziger
+
         odao.delete(ovChipkaart);
-        odao.rdao.delete(reiziger); // Assume rdao is accessible from odao
+        odao.rdao.delete(reiziger);
 
         System.out.println("\n---------- Einde test ProductDAO -------------");
     }
-
-
 
 }
