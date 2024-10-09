@@ -2,6 +2,8 @@ package dp.assignments.ovchip.domain;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 public class OVChipkaart {
 
@@ -10,6 +12,7 @@ public class OVChipkaart {
     private int klasse;
     private BigDecimal saldo;
     private Reiziger reiziger;
+    private List<Product> producten = new ArrayList<>();
 
     public OVChipkaart(int kaartNummer, Date geldigTot, int klasse, BigDecimal saldo, Reiziger reiziger) {
         this.kaartNummer = kaartNummer;
@@ -21,6 +24,28 @@ public class OVChipkaart {
 
     public OVChipkaart() {
 
+    }
+
+    public void addProduct(Product product) {
+        if (!producten.contains(product)) {
+            producten.add(product);
+            product.addOVChipkaart(this);
+        }
+    }
+
+    public void removeProduct(Product product) {
+        if (producten.contains(product)) {
+            producten.remove(product);
+            product.removeOVChipkaart(this);
+        }
+    }
+
+    public List<Product> getProducten() {
+        return producten;
+    }
+
+    public void setProducten(List<Product> producten) {
+        this.producten = producten;
     }
 
     public int getKaartNummer() {

@@ -2,10 +2,12 @@ package dp.assignments;
 
 import dp.assignments.ovchip.dao.AdresDAOPsql;
 import dp.assignments.ovchip.dao.OVChipkaartDAOPsql;
+import dp.assignments.ovchip.dao.ProductDAOPsql;
 import dp.assignments.ovchip.dao.ReizigerDAOPsql;
 import dp.assignments.ovchip.domain.Adres;
 import dp.assignments.ovchip.database.DB;
 import dp.assignments.ovchip.domain.OVChipkaart;
+import dp.assignments.ovchip.domain.Product;
 import dp.assignments.ovchip.domain.Reiziger;
 
 import java.math.BigDecimal;
@@ -19,11 +21,13 @@ public class App
         Connection conn = connect();
 
         ReizigerDAOPsql rdao = new ReizigerDAOPsql(conn);
-        OVChipkaartDAOPsql odao = new OVChipkaartDAOPsql(conn,rdao);
+        ProductDAOPsql pdao = new ProductDAOPsql(conn, rdao);
+        OVChipkaartDAOPsql odao = new OVChipkaartDAOPsql(conn,rdao, pdao);
 
-        testOVChipkaartDAO(odao, rdao);
-
+        testProductDAO(pdao, odao);
+//        testOVChipkaartDAO(odao, rdao);
 //        testAdresDAO(new AdresDAOPsql(connect()));
+
     }
 
     // Connection with JDBC
@@ -157,6 +161,77 @@ public class App
         rdao.delete(reiziger);
         System.out.println("\n---------- Einde test OVChipkaartDAO -------------");
     }
+
+    private static void testProductDAO(ProductDAOPsql pdao, OVChipkaartDAOPsql odao) throws SQLException {
+        System.out.println("\n---------- Test ProductDAO -------------");
+
+        // Create a new Reiziger and save it
+        Reiziger reiziger = new Reiziger(69, "P", "", "Vos", java.sql.Date.valueOf("2003-06-11"));
+        odao.rdao.save(reiziger); // Assume rdao is accessible from odao
+
+        // Create and save a new OVChipkaart
+        OVChipkaart ovChipkaart = new OVChipkaart(83892481, Date.valueOf("2029-11-02"), 2, new BigDecimal(0), reiziger);
+        odao.save(ovChipkaart);
+
+        // Test findAll()
+        List<Product> products = pdao.findAll();
+        System.out.println("[Test] ProductDAO.findAll() geeft de volgende Producten:");
+        for (Product product : products) {
+            System.out.println(product);
+        }
+        System.out.println();
+
+        // Create a new Product and associate it with the OVChipkaart
+        Product newProduct = new Product(88, "Tegoed", "Tegoed voor reizen", new BigDecimal("50.00"));
+        newProduct.addOVChipkaart(ovChipkaart); // Associate with the OVChipkaart
+        System.out.println("[Test] Voeg nieuwe Product toe en associeer met OV-chipkaart.");
+        pdao.save(newProduct);
+
+        // Test findByOVChipkaart()
+        List<Product> productsByOVChipkaart = pdao.findByOVChipkaart(ovChipkaart);
+        System.out.println("[Test] ProductDAO.findByOVChipkaart() geeft de volgende Producten voor OV-chipkaart met nummer 83892481:");
+        for (Product product : productsByOVChipkaart) {
+            System.out.println(product);
+        }
+        System.out.println();
+
+        // Update an existing Product
+        System.out.println("[Test] Update de prijs van Product met productnummer 1.");
+        newProduct.setPrijs(new BigDecimal("75.00"));
+        pdao.update(newProduct);
+        Product updatedProduct = pdao.findAll().stream()
+                .filter(p -> p.getProductNummer() == newProduct.getProductNummer())
+                .findFirst()
+                .orElse(null);
+        System.out.println("Prijs na update: " + (updatedProduct != null ? updatedProduct.getPrijs() : "Geen product gevonden"));
+
+        // Test findByID()
+        System.out.println("[Test] Zoek Product met productnummer 88.");
+        Product productById = pdao.findAll().stream()
+                .filter(p -> p.getProductNummer() == 88)
+                .findFirst()
+                .orElse(null);
+        if (productById != null) {
+            System.out.println("Gevonden Product: " + productById);
+        } else {
+            System.out.println("Geen Product gevonden met productnummer 88.");
+        }
+        System.out.println();
+
+        // Delete the Product
+        System.out.println("[Test] Verwijder Product met productnummer 88.");
+        pdao.delete(newProduct);
+        products = pdao.findAll();
+        System.out.println("Aantal Producten na ProductDAO.delete(): " + products.size());
+        System.out.println();
+
+        // Clean up: delete OVChipkaart and Reiziger
+        odao.delete(ovChipkaart);
+        odao.rdao.delete(reiziger); // Assume rdao is accessible from odao
+
+        System.out.println("\n---------- Einde test ProductDAO -------------");
+    }
+
 
 
 }

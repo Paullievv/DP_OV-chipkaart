@@ -1,6 +1,7 @@
 package dp.assignments.ovchip.dao;
 
 import dp.assignments.ovchip.domain.OVChipkaart;
+import dp.assignments.ovchip.domain.Product;
 import dp.assignments.ovchip.domain.Reiziger;
 import dp.assignments.ovchip.interfaces.OVChipkaartDAO;
 
@@ -13,13 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OVChipkaartDAOPsql implements OVChipkaartDAO {
-
     private final Connection conn;
-    private ReizigerDAOPsql rdao;
+    public ReizigerDAOPsql rdao;
+    private final ProductDAOPsql productDAO;
 
-    public OVChipkaartDAOPsql(Connection conn, ReizigerDAOPsql rdao) {
+    public OVChipkaartDAOPsql(Connection conn, ReizigerDAOPsql rdao, ProductDAOPsql productDAO) {
         this.conn = conn;
         this.rdao = rdao;
+        this.productDAO = productDAO;
     }
 
     @Override
@@ -33,7 +35,23 @@ public class OVChipkaartDAOPsql implements OVChipkaartDAO {
             stmt.setInt(5, ovChipkaart.getReiziger().getId());
 
             int affectedRows = stmt.executeUpdate();
-            return affectedRows > 0;
+            if (affectedRows > 0) {
+                saveProducts(ovChipkaart);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    private void saveProducts(OVChipkaart ovChipkaart) throws SQLException {
+        String sql = "INSERT INTO ov_chipkaart_product (kaart_nummer, product_nummer) VALUES (?, ?)";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            for (Product product : ovChipkaart.getProducten()) {
+                stmt.setInt(1, ovChipkaart.getKaartNummer());
+                stmt.setInt(2, product.getProductNummer());
+                stmt.addBatch();
+            }
+            stmt.executeBatch();
         }
     }
 
@@ -48,12 +66,27 @@ public class OVChipkaartDAOPsql implements OVChipkaartDAO {
             stmt.setInt(5, ovChipkaart.getKaartNummer());
 
             int affectedRows = stmt.executeUpdate();
-            return affectedRows > 0;
+            if (affectedRows > 0) {
+                deleteProducts(ovChipkaart);
+                saveProducts(ovChipkaart);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    private void deleteProducts(OVChipkaart ovChipkaart) throws SQLException {
+        String sql = "DELETE FROM ov_chipkaart_product WHERE kaart_nummer = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, ovChipkaart.getKaartNummer());
+            stmt.executeUpdate();
         }
     }
 
     @Override
     public boolean delete(OVChipkaart ovChipkaart) throws SQLException {
+        deleteProducts(ovChipkaart);
+
         String sql = "DELETE FROM ov_chipkaart WHERE kaart_nummer = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, ovChipkaart.getKaartNummer());
@@ -80,10 +113,32 @@ public class OVChipkaartDAOPsql implements OVChipkaartDAO {
                 Reiziger reiziger = rdao.findById(reizigerId);
                 ovChipkaart.setReiziger(reiziger);
 
+                ovChipkaart.setProducten(findProductsByOVChipkaart(ovChipkaart));
+
                 return ovChipkaart;
             }
         }
         return null;
+    }
+
+    private List<Product> findProductsByOVChipkaart(OVChipkaart ovChipkaart) throws SQLException {
+        String sql = "SELECT p.* FROM product p JOIN ov_chipkaart_product ocp ON p.product_nummer = ocp.product_nummer WHERE ocp.kaart_nummer = ?";
+        List<Product> producten = new ArrayList<>();
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, ovChipkaart.getKaartNummer());
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Product product = new Product(
+                        rs.getInt("product_nummer"),
+                        rs.getString("naam"),
+                        rs.getString("beschrijving"),
+                        rs.getBigDecimal("prijs")
+                );
+                producten.add(product);
+            }
+        }
+        return producten;
     }
 
     @Override
@@ -102,6 +157,9 @@ public class OVChipkaartDAOPsql implements OVChipkaartDAO {
                 ovChipkaart.setSaldo(rs.getBigDecimal("saldo"));
                 ovChipkaart.setReiziger(reiziger);
 
+                // Retrieve and set the products for this OVChipkaart
+                ovChipkaart.setProducten(findProductsByOVChipkaart(ovChipkaart));
+
                 ovChipkaarten.add(ovChipkaart);
             }
         }
@@ -112,6 +170,7 @@ public class OVChipkaartDAOPsql implements OVChipkaartDAO {
     public List<OVChipkaart> findAll() throws SQLException {
         String sql = "SELECT * FROM ov_chipkaart";
         List<OVChipkaart> ovChipkaarten = new ArrayList<>();
+
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             ResultSet rs = stmt.executeQuery();
 
@@ -126,9 +185,42 @@ public class OVChipkaartDAOPsql implements OVChipkaartDAO {
                 Reiziger reiziger = rdao.findById(reizigerId);
                 ovChipkaart.setReiziger(reiziger);
 
+                // Retrieve and set the products for this OVChipkaart
+                List<Product> producten = findProductsByOVChipkaart(ovChipkaart.getKaartNummer());
+                for (Product product : producten) {
+                    ovChipkaart.addProduct(product); // Use the method to ensure bidirectional relationship
+                }
+
                 ovChipkaarten.add(ovChipkaart);
             }
         }
         return ovChipkaarten;
     }
+
+    private List<Product> findProductsByOVChipkaart(int kaartNummer) throws SQLException {
+        String sql = "SELECT p.product_nummer, p.naam, p.beschrijving, p.prijs " +
+                "FROM product p " +
+                "JOIN ov_chipkaart_product ocp ON p.product_nummer = ocp.product_nummer " +
+                "WHERE ocp.kaart_nummer = ?";
+
+        List<Product> producten = new ArrayList<>();
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, kaartNummer);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                Product product = new Product();
+                product.setProductNummer(rs.getInt("product_nummer"));
+                product.setNaam(rs.getString("naam"));
+                product.setBeschrijving(rs.getString("beschrijving"));
+                product.setPrijs(rs.getBigDecimal("prijs"));
+
+                producten.add(product);
+            }
+        }
+        return producten;
+    }
+
+
 }
