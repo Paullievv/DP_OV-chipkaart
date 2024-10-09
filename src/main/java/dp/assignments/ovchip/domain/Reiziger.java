@@ -1,7 +1,7 @@
 package dp.assignments.ovchip.domain;
 
-import javax.persistence.*;
 import java.sql.Date;
+import java.util.List;
 
 public class Reiziger {
     private int id;
@@ -10,6 +10,7 @@ public class Reiziger {
     private String achternaam;
     private Date geboortedatum;
     private Adres adres;
+    private List<OVChipkaart> ovChipkaarten;
 
     public Reiziger(int id, String voorletters, String tussenvoegsel, String achternaam, Date geboortedatum) {
         this.id = id;
@@ -19,13 +20,14 @@ public class Reiziger {
         this.geboortedatum = geboortedatum;
     }
 
-    public Reiziger(int id, String voorletters, String tussenvoegsel, String achternaam, Date geboortedatum, Adres adres) {
+    public Reiziger(int id, String voorletters, String tussenvoegsel, String achternaam, Date geboortedatum, Adres adres, List<OVChipkaart> ovChipkaarten) {
         this.id = id;
         this.voorletters = voorletters;
         this.tussenvoegsel = tussenvoegsel;
         this.achternaam = achternaam;
         this.geboortedatum = geboortedatum;
         this.adres = adres;
+        this.ovChipkaarten = ovChipkaarten;
     }
 
     public int getId() {
@@ -70,6 +72,14 @@ public class Reiziger {
 
     public String getNaam() {
         return getVoorletters() + getTussenvoegsel() + getAchternaam();
+    }
+
+    public List<OVChipkaart> getOvChipkaarten() {
+        return ovChipkaarten;
+    }
+
+    public void setOvChipkaarten(List<OVChipkaart> ovChipkaarten) {
+        this.ovChipkaarten = ovChipkaarten;
     }
 
     @Override

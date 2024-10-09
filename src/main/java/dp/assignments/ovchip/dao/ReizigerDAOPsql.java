@@ -16,7 +16,7 @@ public class ReizigerDAOPsql implements ReizigerDAO {
     }
 
     @Override
-    public boolean save(Reiziger reiziger) {
+    public boolean save(Reiziger reiziger) throws SQLException {
         String sql = "INSERT INTO reiziger (reiziger_id, voorletters, tussenvoegsel, achternaam, geboortedatum) VALUES (?, ?, ?, ?, ?)";
 
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -28,17 +28,6 @@ public class ReizigerDAOPsql implements ReizigerDAO {
 
             int affectedRows = stmt.executeUpdate();
             return affectedRows > 0;
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-            return false;
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                } catch (SQLException e) {
-                    System.out.println(e.getMessage());
-                }
-            }
         }
     }
 

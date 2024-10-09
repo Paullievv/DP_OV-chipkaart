@@ -1,17 +1,29 @@
 package dp.assignments;
 
 import dp.assignments.ovchip.dao.AdresDAOPsql;
+import dp.assignments.ovchip.dao.OVChipkaartDAOPsql;
+import dp.assignments.ovchip.dao.ReizigerDAOPsql;
 import dp.assignments.ovchip.domain.Adres;
 import dp.assignments.ovchip.database.DB;
+import dp.assignments.ovchip.domain.OVChipkaart;
 import dp.assignments.ovchip.domain.Reiziger;
 
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.List;
 
 public class App
 {
     public static void main(String[] args) throws SQLException {
-        testAdresDAO(new AdresDAOPsql(connect()));
+
+        Connection conn = connect();
+
+        ReizigerDAOPsql rdao = new ReizigerDAOPsql(conn);
+        OVChipkaartDAOPsql odao = new OVChipkaartDAOPsql(conn,rdao);
+
+        testOVChipkaartDAO(odao, rdao);
+
+//        testAdresDAO(new AdresDAOPsql(connect()));
     }
 
     // Connection with JDBC
@@ -83,5 +95,68 @@ public class App
 
         System.out.println("\n---------- Einde test AdresDAO -------------");
     }
+
+    private static void testOVChipkaartDAO(OVChipkaartDAOPsql odao, ReizigerDAOPsql rdao) throws SQLException {
+        System.out.println("\n---------- Test OVChipkaartDAO -------------");
+
+        List<OVChipkaart> chipkaarten = odao.findAll();
+        System.out.println("[Test] OVChipkaartDAO.findAll() geeft de volgende OV-chipkaarten:");
+        for (OVChipkaart ov : chipkaarten) {
+            System.out.println(ov);
+        }
+        System.out.println();
+
+        Reiziger reiziger = new Reiziger(69, "P", "", "Vos", java.sql.Date.valueOf("2003-06-11"));
+        rdao.save(reiziger);
+
+        // Find OV-chipkaarten by reiziger
+        List<OVChipkaart> chipkaartenByReiziger = odao.findByReiziger(reiziger);
+        System.out.println("[Test] OVChipkaartDAO.findByReiziger() geeft de volgende OV-chipkaarten voor Reiziger met ID 69:");
+        for (OVChipkaart ov : chipkaartenByReiziger) {
+            System.out.println(ov);
+        }
+        System.out.println();
+
+        // Create a new OVChipkaart and save it
+        OVChipkaart ovChipkaart = new OVChipkaart(83892481, Date.valueOf("2029-11-02"), 2, new BigDecimal(0), reiziger);
+        OVChipkaart secondOVChipkaart = new OVChipkaart(23456441, Date.valueOf("2029-11-02"), 2, new BigDecimal(0), reiziger);
+        System.out.println("[Test] Voeg nieuwe OV-chipkaart toe voor Reiziger met ID 69");
+        odao.save(ovChipkaart);
+        odao.save(secondOVChipkaart);
+        chipkaarten = odao.findAll();
+        System.out.println("[Test] Aantal OV-chipkaarten na toevoegen van nieuwe kaart: " + chipkaarten.size());
+        System.out.println();
+
+        // Update an existing OV-chipkaart
+        System.out.println("[Test] Update saldo van OV-chipkaart met kaartnummer 83892481");
+        ovChipkaart.setSaldo(BigDecimal.valueOf(50.75));
+        odao.update(ovChipkaart);
+        OVChipkaart updatedChipkaart = odao.findByID(83892481);
+        System.out.println("Saldo na update: " + updatedChipkaart.getSaldo());
+        System.out.println();
+
+        // Test findByID()
+        System.out.println("[Test] Zoek OV-chipkaart met kaartnummer 83892481");
+        OVChipkaart chipkaartById = odao.findByID(83892481);
+        if (chipkaartById != null) {
+            System.out.println("Gevonden OV-chipkaart: " + chipkaartById);
+        } else {
+            System.out.println("Geen OV-chipkaart gevonden met kaartnummer 83892481");
+        }
+        System.out.println();
+
+        // Delete an OV-chipkaart
+        System.out.println("[Test] Verwijder OV-chipkaart met kaartnummer 83892481 en 23456441");
+        odao.delete(ovChipkaart);
+        odao.delete(secondOVChipkaart);
+        chipkaarten = odao.findAll();
+        System.out.println("Aantal OV-chipkaarten na OVChipkaartDAO.delete(): " + chipkaarten.size());
+        System.out.println();
+
+        // Clean up: delete test reiziger
+        rdao.delete(reiziger);
+        System.out.println("\n---------- Einde test OVChipkaartDAO -------------");
+    }
+
 
 }

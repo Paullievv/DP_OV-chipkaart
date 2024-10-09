@@ -1,17 +1,17 @@
 package dp.assignments.ovchip.domain;
 
-import javax.persistence.*;
-import java.util.Date;
+import java.math.BigDecimal;
+import java.sql.Date;
 
 public class OVChipkaart {
 
     private int kaartNummer;
     private Date geldigTot;
     private int klasse;
-    private double saldo;
+    private BigDecimal saldo;
     private Reiziger reiziger;
 
-    public OVChipkaart(int kaartNummer, Date geldigTot, int klasse, double saldo, Reiziger reiziger) {
+    public OVChipkaart(int kaartNummer, Date geldigTot, int klasse, BigDecimal saldo, Reiziger reiziger) {
         this.kaartNummer = kaartNummer;
         this.geldigTot = geldigTot;
         this.klasse = klasse;
@@ -47,11 +47,11 @@ public class OVChipkaart {
         this.klasse = klasse;
     }
 
-    public double getSaldo() {
+    public BigDecimal getSaldo() {
         return saldo;
     }
 
-    public void setSaldo(double saldo) {
+    public void setSaldo(BigDecimal saldo) {
         this.saldo = saldo;
     }
 
